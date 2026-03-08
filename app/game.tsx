@@ -242,16 +242,24 @@ function PlayerRow({
       entering={FadeInDown.duration(300).delay(index * 40)}
       layout={Layout.springify()}
       style={animStyle}
-    >
-      <Pressable
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        disabled={!player.isAlive}
-        style={[
-          styles.playerRow,
-          !player.isAlive && styles.playerRowEliminated,
-        ]}
+    <Pressable
+  onPress={() => {
+    Alert.alert(
+      "Rol del jugador",
+      player.role === "falso profeta"
+        ? "Eres el Falso Profeta"
+        : "Eres un Creyente"
+    );
+    onPress && onPress();
+  }}
+  onPressIn={handlePressIn}
+  onPressOut={handlePressOut}
+  disabled={!player.isAlive}
+  style={[
+    styles.playerRow,
+    !player.isAlive && styles.playerRowEliminated,
+  ]}
+>
       >
         <View style={[styles.playerAvatar, !player.isAlive && styles.playerAvatarEliminated]}>
           {player.isAlive ? (
