@@ -213,6 +213,7 @@ function StatBadge({
   );
 }
 
+// PlayerRow modificado para mostrar el rol al presionar
 function PlayerRow({
   player,
   index,
@@ -237,29 +238,35 @@ function PlayerRow({
     scale.value = withSpring(1);
   };
 
+  // Evento customizado para revelar rol
+  const handleRevealRole = () => {
+    let rolMensaje = "Rol no definido";
+    if (player.role === "falso profeta") {
+      rolMensaje = "Eres el Falso Profeta";
+    } else if (player.role === "creyente") {
+      rolMensaje = "Eres un Creyente";
+    }
+    Alert.alert("Rol del jugador", rolMensaje);
+  };
+
   return (
     <Animated.View
       entering={FadeInDown.duration(300).delay(index * 40)}
       layout={Layout.springify()}
       style={animStyle}
-    <Pressable
-  onPress={() => {
-    Alert.alert(
-      "Rol del jugador",
-      player.role === "falso profeta"
-        ? "Eres el Falso Profeta"
-        : "Eres un Creyente"
-    );
-    onPress && onPress();
-  }}
-  onPressIn={handlePressIn}
-  onPressOut={handlePressOut}
-  disabled={!player.isAlive}
-  style={[
-    styles.playerRow,
-    !player.isAlive && styles.playerRowEliminated,
-  ]}
->
+    >
+      <Pressable
+        onPress={() => {
+          handleRevealRole();
+          onPress && onPress();
+        }}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={!player.isAlive}
+        style={[
+          styles.playerRow,
+          !player.isAlive && styles.playerRowEliminated,
+        ]}
       >
         <View style={[styles.playerAvatar, !player.isAlive && styles.playerAvatarEliminated]}>
           {player.isAlive ? (
@@ -270,7 +277,6 @@ function PlayerRow({
             <Ionicons name="skull-outline" size={18} color={Colors.eliminatedText} />
           )}
         </View>
-
         <View style={styles.playerInfo}>
           <Text style={[styles.playerName, !player.isAlive && styles.playerNameEliminated]}>
             {player.name}
@@ -279,7 +285,6 @@ function PlayerRow({
             <Text style={styles.eliminatedLabel}>Eliminado</Text>
           )}
         </View>
-
         {player.isAlive && (
           <View style={styles.playerAction}>
             <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
