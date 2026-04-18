@@ -13,10 +13,7 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
-  withSequence,
-  withSpring,
   FadeIn,
-  FadeOut,
   Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -26,15 +23,13 @@ import Colors from '@/constants/colors';
 import { useGame } from '@/contexts/GameContext';
 
 const { width } = Dimensions.get('window');
-
-type RevealState = 'waiting' | 'showing' | 'done';
+const CARD_HEIGHT = 340;
 
 export default function RevealScreen() {
   const insets = useSafeAreaInsets();
   const { players, character, revealIndex, nextReveal, gamePhase } = useGame();
-  const [revealState, setRevealState] = useState<RevealState>('waiting');
+  const [hasPeeked, setHasPeeked] = useState(false);
   const cardFlip = useSharedValue(0);
-  const cardScale = useSharedValue(1);
 
   const topPadding = Platform.OS === 'web' ? 67 : insets.top;
   const bottomPadding = Platform.OS === 'web' ? 34 : insets.bottom;
@@ -49,9 +44,15 @@ export default function RevealScreen() {
     }
   }, [gamePhase]);
 
+  // Cada vez que cambia el jugador, resetear estado
+  useEffect(() => {
+    setHasPeeked(false);
+    cardFlip.value = withTiming(0, { duration: 200 });
+  }, [revealIndex]);
+
   const frontStyle = useAnimatedStyle(() => ({
     transform: [
-      { perspective: 800 },
+      { perspective: 1000 },
       { rotateY: `${cardFlip.value * 180}deg` },
     ],
     backfaceVisibility: 'hidden',
@@ -61,33 +62,26 @@ export default function RevealScreen() {
 
   const backStyle = useAnimatedStyle(() => ({
     transform: [
-      { perspective: 800 },
-      { rotateY: `${(cardFlip.value * 180) + 180}deg` },
+      { perspective: 1000 },
+      { rotateY: `${cardFlip.value * 180 + 180}deg` },
     ],
     backfaceVisibility: 'hidden',
     position: 'absolute',
     width: '100%',
   }));
 
-  const containerStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: cardScale.value }],
-  }));
-
-  const handleReveal = () => {
-    if (revealState !== 'waiting') return;
+  const handlePressIn = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    setRevealState('showing');
-    cardFlip.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.ease) });
-    cardScale.value = withSequence(
-      withSpring(1.03),
-      withSpring(1),
-    );
+    cardFlip.value = withTiming(1, { duration: 400, easing: Easing.out(Easing.ease) });
+  };
+
+  const handlePressOut = () => {
+    cardFlip.value = withTiming(0, { duration: 350, easing: Easing.inOut(Easing.ease) });
+    setHasPeeked(true);
   };
 
   const handleNext = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    cardFlip.value = withTiming(0, { duration: 300 });
-    setRevealState('waiting');
     nextReveal();
   };
 
@@ -124,18 +118,19 @@ export default function RevealScreen() {
         </Text>
       </View>
 
-      <View style={styles.content}>
+      <View style={[styles.content, { paddingBottom: bottomPadding + 16 }]}>
         <Animated.Text entering={FadeIn.duration(400)} style={styles.playerName}>
           {currentPlayer.name}
         </Animated.Text>
 
         <Text style={styles.instruction}>
-          {revealState === 'waiting'
-            ? 'Presiona la carta para ver tu rol'
-            : 'Memoriza bien tu rol'}
+          {hasPeeked
+            ? 'Pasa el teléfono al siguiente jugador'
+            : 'Mantén presionado para ver tu rol'}
         </Text>
 
-        <Animated.View style={[styles.cardContainer, containerStyle]}>
+        {/* Card container con Pressable encima de toda la carta */}
+        <View style={styles.cardWrapper}>
           <Animated.View style={[styles.cardFace, frontStyle]}>
             <LinearGradient
               colors={[Colors.surface, Colors.surfaceElevated]}
@@ -145,9 +140,12 @@ export default function RevealScreen() {
                 <View style={styles.cardCrossContainer}>
                   <Text style={styles.cardCrossText}>☩</Text>
                 </View>
-                <Text style={styles.cardTapText}>Toca para revelar</Text>
+                <Text style={styles.cardTapText}>Mantén presionado</Text>
+                <View style={styles.holdHint}>
+                  <Ionicons name="finger-print" size={16} color={Colors.textMuted} />
+                  <Text style={styles.holdHintText}>Suelta para cerrar</Text>
+                </View>
               </View>
-              <Pressable style={StyleSheet.absoluteFillObject} onPress={handleReveal} />
             </LinearGradient>
           </Animated.View>
 
@@ -189,10 +187,17 @@ export default function RevealScreen() {
               </View>
             </LinearGradient>
           </Animated.View>
-        </Animated.View>
 
-        {revealState === 'showing' && (
-          <Animated.View entering={FadeIn.duration(400).delay(400)} style={styles.nextContainer}>
+          {/* Pressable transparente que cubre toda la carta */}
+          <Pressable
+            style={styles.cardPressable}
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+          />
+        </View>
+
+        {hasPeeked ? (
+          <Animated.View entering={FadeIn.duration(400)} style={styles.nextContainer}>
             <Pressable
               style={({ pressed }) => [styles.nextButton, pressed && styles.nextButtonPressed]}
               onPress={handleNext}
@@ -210,13 +215,13 @@ export default function RevealScreen() {
               </LinearGradient>
             </Pressable>
           </Animated.View>
+        ) : (
+          <View style={styles.nextContainerPlaceholder} />
         )}
       </View>
     </View>
   );
 }
-
-const CARD_HEIGHT = 340;
 
 const styles = StyleSheet.create({
   container: {
@@ -274,7 +279,7 @@ const styles = StyleSheet.create({
     color: Colors.textMuted,
     textAlign: 'center',
   },
-  cardContainer: {
+  cardWrapper: {
     width: width - 48,
     height: CARD_HEIGHT,
     position: 'relative',
@@ -294,7 +299,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 20,
+    gap: 16,
   },
   cardCrossContainer: {
     width: 80,
@@ -314,6 +319,25 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter_500Medium',
     color: Colors.textMuted,
     letterSpacing: 0.5,
+  },
+  holdHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    opacity: 0.6,
+  },
+  holdHintText: {
+    fontSize: 12,
+    fontFamily: 'Inter_400Regular',
+    color: Colors.textMuted,
+  },
+  cardPressable: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 20,
   },
   cardRevealed: {
     flex: 1,
@@ -390,6 +414,10 @@ const styles = StyleSheet.create({
   },
   nextContainer: {
     width: '100%',
+  },
+  nextContainerPlaceholder: {
+    width: '100%',
+    height: 56,
   },
   nextButton: {
     borderRadius: 14,

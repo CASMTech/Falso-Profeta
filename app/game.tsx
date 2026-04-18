@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Pressable,
   FlatList,
-  Alert,
   Platform,
   Modal,
 } from 'react-native';
@@ -18,7 +17,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withSpring,
-  withTiming,
   ZoomIn,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -213,7 +211,6 @@ function StatBadge({
   );
 }
 
-// PlayerRow modificado para mostrar el rol al presionar
 function PlayerRow({
   player,
   index,
@@ -238,17 +235,6 @@ function PlayerRow({
     scale.value = withSpring(1);
   };
 
-  // Evento customizado para revelar rol
-  const handleRevealRole = () => {
-    let rolMensaje = "Rol no definido";
-    if (player.role === "falso profeta") {
-      rolMensaje = "Eres el Falso Profeta";
-    } else if (player.role === "creyente") {
-      rolMensaje = "Eres un Creyente";
-    }
-    Alert.alert("Rol del jugador", rolMensaje);
-  };
-
   return (
     <Animated.View
       entering={FadeInDown.duration(300).delay(index * 40)}
@@ -256,10 +242,7 @@ function PlayerRow({
       style={animStyle}
     >
       <Pressable
-        onPress={() => {
-          handleRevealRole();
-          onPress && onPress();
-        }}
+        onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
         disabled={!player.isAlive}
@@ -277,6 +260,7 @@ function PlayerRow({
             <Ionicons name="skull-outline" size={18} color={Colors.eliminatedText} />
           )}
         </View>
+
         <View style={styles.playerInfo}>
           <Text style={[styles.playerName, !player.isAlive && styles.playerNameEliminated]}>
             {player.name}
@@ -285,6 +269,7 @@ function PlayerRow({
             <Text style={styles.eliminatedLabel}>Eliminado</Text>
           )}
         </View>
+
         {player.isAlive && (
           <View style={styles.playerAction}>
             <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
