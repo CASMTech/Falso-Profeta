@@ -90,15 +90,6 @@ export default function GameScreen() {
             value={eliminatedPlayers.length}
             color={Colors.textMuted}
           />
-          {character && (
-            <>
-              <View style={styles.statDivider} />
-              <View style={styles.characterBadge}>
-                <Ionicons name="book" size={14} color={Colors.gold} />
-                <Text style={styles.characterBadgeText}>{character.name}</Text>
-              </View>
-            </>
-          )}
         </View>
       </Animated.View>
 

@@ -179,9 +179,8 @@ export default function RevealScreen() {
                       <Ionicons name="shield-checkmark" size={36} color={Colors.civilianLight} />
                     </View>
                     <Text style={styles.roleLabelCivilian}>CREYENTE</Text>
-                    <Text style={styles.characterName}>{character.name}</Text>
                     <View style={styles.divider} />
-                    <Text style={styles.characterDesc}>{character.description}</Text>
+                    <Text style={styles.characterName}>{character.name}</Text>
                   </>
                 )}
               </View>
